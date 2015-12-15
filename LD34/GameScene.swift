@@ -9,6 +9,25 @@
 import SpriteKit
 import GameplayKit
 
+protocol PositionRandomGenerator {
+    func nextPosition() -> Int
+}
+
+@available(OSX 10.11, *)
+class ShuffledRandomGenerator: PositionRandomGenerator {
+    let positionGenerator: GKShuffledDistribution = GKShuffledDistribution(forDieWithSideCount: 10)
+    
+    func nextPosition() -> Int {
+        return positionGenerator.nextInt()
+    }
+}
+
+class BasicRandomGenerator: PositionRandomGenerator {
+    func nextPosition() -> Int {
+        return (abs(random()) % 10) + 1
+    }
+}
+
 class GameScene: SKScene {
     var game: Game!
     
@@ -21,12 +40,18 @@ class GameScene: SKScene {
     var flowerNodes: [SKSpriteNode] = []
     var pointsNode: SKLabelNode!
     
-    var flowerPositionGenerator: GKShuffledDistribution = GKShuffledDistribution(forDieWithSideCount: 10)
-    
     var points: Double = 0
     var currentSpeed: CGFloat = 50
     
+    var positionRandomGenerator: PositionRandomGenerator!
+    
     override func didMoveToView(view: SKView) {
+        if #available(OSX 10.11, *) {
+            positionRandomGenerator = ShuffledRandomGenerator()
+        } else {
+            positionRandomGenerator = BasicRandomGenerator()
+        }
+        
         physicsWorld.contactDelegate = self
         
         beeTexuture = SKTexture(imageNamed: "Bee")
@@ -50,7 +75,7 @@ class GameScene: SKScene {
     }
     
     func generateFloweNode() {
-        let xpos = CGFloat(flowerPositionGenerator.nextInt() * 120)
+        let xpos = CGFloat(positionRandomGenerator.nextPosition() * 120)
         
         let flowerNode = SKSpriteNode(imageNamed: "Flower")
         flowerNode.name = "Flower"
